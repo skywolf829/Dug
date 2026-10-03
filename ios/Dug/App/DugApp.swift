@@ -19,7 +19,6 @@ enum Theme {
     static let gold = Color(red: 0.86, green: 0.60, blue: 0.24)
     /// The voice-box collar.
     static let collar = Color(red: 0.42, green: 0.45, blue: 0.50)
-    static let squirrel = Color(red: 0.62, green: 0.38, blue: 0.22)
     static let card = Color(.secondarySystemGroupedBackground)
     static let background = Color(.systemGroupedBackground)
 }

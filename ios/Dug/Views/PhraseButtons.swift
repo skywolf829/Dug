@@ -51,34 +51,6 @@ struct PhraseButton: View {
     private var isPlaying: Bool { collar.playingID == phrase.id }
 }
 
-/// The most important button.
-struct SquirrelButton: View {
-    @EnvironmentObject private var model: AppModel
-    @EnvironmentObject private var collar: Collar
-    let phrase: Phrase
-    @State private var tapped = 0
-
-    var body: some View {
-        Button {
-            tapped += 1
-            Task { await model.play(phrase) }
-        } label: {
-            HStack(spacing: 12) {
-                Text("🐿️").font(.system(size: 44))
-                    .rotationEffect(.degrees(collar.playingID == phrase.id ? -12 : 0))
-                    .animation(.spring(duration: 0.25, bounce: 0.6), value: collar.playingID)
-                Text("SQUIRREL!")
-                    .font(.system(size: 34, weight: .black, design: .rounded))
-            }
-            .foregroundStyle(.white)
-            .frame(maxWidth: .infinity, minHeight: 88)
-            .background(Theme.squirrel.gradient, in: RoundedRectangle(cornerRadius: 20))
-        }
-        .buttonStyle(.plain)
-        .sensoryFeedback(.impact(weight: .heavy), trigger: tapped)
-    }
-}
-
 /// Type anything and Dug says it.
 struct SayItCard: View {
     @EnvironmentObject private var model: AppModel

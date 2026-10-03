@@ -15,14 +15,10 @@ struct ContentView: View {
                 VStack(spacing: 16) {
                     CollarCard()
 
-                    if let squirrel = model.phrases.first(where: { $0.id == Phrase.squirrelID }) {
-                        SquirrelButton(phrase: squirrel)
-                    }
-
                     SayItCard()
 
                     LazyVGrid(columns: columns, spacing: 12) {
-                        ForEach(model.phrases.filter { $0.id != Phrase.squirrelID }) { phrase in
+                        ForEach(model.phrases) { phrase in
                             PhraseButton(phrase: phrase, onEdit: { editing = phrase })
                         }
                     }
