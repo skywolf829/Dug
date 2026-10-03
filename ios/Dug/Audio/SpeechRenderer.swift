@@ -4,12 +4,14 @@ enum RenderError: LocalizedError {
     case emptyText
     case noAudio
     case conversionFailed
+    case timedOut
 
     var errorDescription: String? {
         switch self {
         case .emptyText: "There's nothing to say."
         case .noAudio: "The voice didn't produce any audio. Try another voice in Settings."
         case .conversionFailed: "Couldn't convert the speech audio."
+        case .timedOut: "The voice took too long to respond. Try again in a moment."
         }
     }
 }
@@ -54,6 +56,15 @@ final class SpeechRenderer {
                     try collector.append(pcm)
                 } catch {
                     once.run { continuation.resume(throwing: error) }
+                }
+            }
+            // The speech service occasionally stalls (seen on a fresh simulator); don't hang forever.
+            Task { [synthesizer] in
+                try? await Task.sleep(for: .seconds(15))
+                once.run {
+                    log.error("render timed out")
+                    synthesizer.stopSpeaking(at: .immediate)
+                    continuation.resume(throwing: RenderError.timedOut)
                 }
             }
         }

@@ -12,6 +12,8 @@ struct VoiceSettings: Codable, Equatable {
 
     var voice: AVSpeechSynthesisVoice? {
         voiceIdentifier.flatMap(AVSpeechSynthesisVoice.init(identifier:))
+            // iOS's own en-US default is often the "super-compact" voice; prefer the best installed one.
+            ?? AVSpeechSynthesisVoice.dugCandidates.first { !$0.isPersonalVoice && $0.language == "en-US" }
             ?? AVSpeechSynthesisVoice(language: "en-US")
     }
 

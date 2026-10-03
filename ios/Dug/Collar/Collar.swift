@@ -174,6 +174,7 @@ final class Collar: ObservableObject {
     }
 
     private func handle(_ event: DugProtocol.Event) {
+        log.debug("collar → \(String(describing: event), privacy: .public)")
         switch event {
         case .state(let volume, let maxVolume, let playing, let freeKB):
             self.volume = volume
@@ -230,6 +231,7 @@ final class Collar: ObservableObject {
 
 extension Collar: CollarTransportDelegate {
     func transport(didChange state: LinkState) {
+        log.info("link: \(state.label, privacy: .public)")
         link = state
         if state == .connected {
             refresh()

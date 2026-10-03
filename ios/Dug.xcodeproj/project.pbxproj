@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		04A2FE91975128130D8E0554 /* Log.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9A2415A8CB86C5A74341408B /* Log.swift */; };
 		087F724CF1C31220ACADD67B /* SpeechRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0E4FC895D9ECD7930A654D1 /* SpeechRenderer.swift */; };
 		099E8487D7E34813ED3E759C /* MuLaw.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6842E66D723BD8766FA58E82 /* MuLaw.swift */; };
 		1AFE67389D3DAD2D61757337 /* SimulatedTransport.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B6ACF7A39706B83C9BC8E4D /* SimulatedTransport.swift */; };
@@ -41,6 +42,7 @@
 		7D7EE2F200A6A67899F880D1 /* DugProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DugProtocol.swift; sourceTree = "<group>"; };
 		894776084B55B709283AF5A7 /* ClipPlayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipPlayer.swift; sourceTree = "<group>"; };
 		98124E89FB738CC6DFC9D15B /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		9A2415A8CB86C5A74341408B /* Log.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Log.swift; sourceTree = "<group>"; };
 		A0E4FC895D9ECD7930A654D1 /* SpeechRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRenderer.swift; sourceTree = "<group>"; };
 		B42A2CC1F6D576EC2E716D0C /* VoiceSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VoiceSettings.swift; sourceTree = "<group>"; };
 		B4C8FC2BB6DC2B9BD68783E0 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -76,6 +78,7 @@
 			isa = PBXGroup;
 			children = (
 				0B85CB1A0D7673B769775430 /* DugApp.swift */,
+				9A2415A8CB86C5A74341408B /* Log.swift */,
 				1B4AE6B6A1EBB4271175725D /* SerialQueue.swift */,
 			);
 			path = App;
@@ -200,6 +203,7 @@
 				DB2666E263BFECA90DDBFD43 /* ContentView.swift in Sources */,
 				9AAE1C78EF1A37A426890A7E /* DugApp.swift in Sources */,
 				B38B642A9072E477D6F5B971 /* DugProtocol.swift in Sources */,
+				04A2FE91975128130D8E0554 /* Log.swift in Sources */,
 				099E8487D7E34813ED3E759C /* MuLaw.swift in Sources */,
 				51751F06798C8A998EDE4039 /* Phrase.swift in Sources */,
 				58A6E0570A56221317574851 /* PhraseButtons.swift in Sources */,

@@ -95,16 +95,21 @@ final class AppModel: ObservableObject {
 
     /// Uploads every phrase the collar is missing (or has an outdated version of).
     func syncAll(force: Bool = false) async {
-        guard collar.isConnected, !isSyncing else { return }
+        guard collar.isConnected, !isSyncing else {
+            log.info("sync skipped (connected: \(self.collar.isConnected), syncing: \(self.isSyncing))")
+            return
+        }
         isSyncing = true
         defer { isSyncing = false }
 
         let todo = phrases.filter { force || status(of: $0) == .needsUpload }
+        log.info("sync: \(todo.count) phrase(s) to upload")
         for (i, phrase) in todo.enumerated() {
             activity = "Teaching Dug \(i + 1) of \(todo.count)…"
             do {
                 try await upload(phrase, playWhenDone: false)
             } catch {
+                log.error("sync failed on \(phrase.title, privacy: .public): \(error.localizedDescription, privacy: .public)")
                 errorMessage = error.localizedDescription
                 break
             }
