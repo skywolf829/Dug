@@ -9,6 +9,8 @@ enum PhraseStatus {
 @MainActor
 final class AppModel: ObservableObject {
     @Published var customPhrases: [Phrase] { didSet { save(customPhrases, key: Keys.phrases) } }
+    /// Soundboard order, by phrase id. Phrases missing from it go at the end.
+    @Published private(set) var order: [UInt8] { didSet { save(order, key: Keys.order) } }
     @Published var voice: VoiceSettings { didSet { save(voice, key: Keys.voice) } }
     @Published var mode: CollarMode {
         didSet {
@@ -27,12 +29,14 @@ final class AppModel: ObservableObject {
 
     private enum Keys {
         static let phrases = "customPhrases"
+        static let order = "phraseOrder"
         static let voice = "voiceSettings"
         static let mode = "collarMode"
     }
 
     init() {
         customPhrases = Self.load([Phrase].self, key: Keys.phrases) ?? []
+        order = Self.load([UInt8].self, key: Keys.order) ?? []
         voice = Self.load(VoiceSettings.self, key: Keys.voice) ?? VoiceSettings()
         let mode = Self.load(CollarMode.self, key: Keys.mode) ?? .simulator
         self.mode = mode
@@ -46,7 +50,20 @@ final class AppModel: ObservableObject {
         }
     }
 
-    var phrases: [Phrase] { Phrase.presets + customPhrases }
+    var phrases: [Phrase] {
+        let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: min)
+        return (Phrase.presets + customPhrases).enumerated()
+            .sorted { (rank[$0.element.id] ?? .max, $0.offset) < (rank[$1.element.id] ?? .max, $1.offset) }
+            .map(\.element)
+    }
+
+    /// Moves `id` into `target`'s spot on the soundboard.
+    func move(_ id: UInt8, to target: UInt8) {
+        var ids = phrases.map(\.id)
+        guard id != target, let from = ids.firstIndex(of: id), let to = ids.firstIndex(of: target) else { return }
+        ids.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
+        order = ids
+    }
 
     /// Clips on the collar that this phone has no button for (e.g. added from the other phone).
     var otherCollarClips: [CollarClip] {
@@ -140,6 +157,7 @@ final class AppModel: ObservableObject {
 
     func delete(_ phrase: Phrase) {
         customPhrases.removeAll { $0.id == phrase.id }
+        order.removeAll { $0 == phrase.id }
         if collar.isConnected { collar.delete(phrase.id) }
     }
 

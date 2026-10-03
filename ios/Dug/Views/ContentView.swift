@@ -6,6 +6,7 @@ struct ContentView: View {
     @State private var showSettings = false
     @State private var editing: Phrase?
     @State private var addingPhrase = false
+    @State private var dragging: UInt8?
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
 
@@ -20,7 +21,19 @@ struct ContentView: View {
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(model.phrases) { phrase in
                             PhraseButton(phrase: phrase, onEdit: { editing = phrase })
+                                .opacity(dragging == phrase.id ? 0.4 : 1)
+                                .onDrag {
+                                    dragging = phrase.id
+                                    return NSItemProvider(object: String(phrase.id) as NSString)
+                                }
+                                .onDrop(of: [.text], delegate: ReorderDropDelegate(target: phrase.id, model: model,
+                                                                                   dragging: $dragging))
                         }
+                    }
+                    .animation(.default, value: model.order)
+                    .onDrop(of: [.text], isTargeted: nil) { _ in
+                        dragging = nil
+                        return true
                     }
 
                     if !model.otherCollarClips.isEmpty {
@@ -80,6 +93,27 @@ struct ContentView: View {
             get: { model.errorMessage != nil || collar.lastError != nil },
             set: { if !$0 { model.errorMessage = nil; collar.lastError = nil } }
         )
+    }
+}
+
+/// Hold a button, then drag it: the grid rearranges live as it passes over other buttons.
+private struct ReorderDropDelegate: DropDelegate {
+    let target: UInt8
+    let model: AppModel
+    @Binding var dragging: UInt8?
+
+    func dropEntered(info: DropInfo) {
+        guard let dragging, dragging != target else { return }
+        model.move(dragging, to: target)
+    }
+
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        DropProposal(operation: .move)
+    }
+
+    func performDrop(info: DropInfo) -> Bool {
+        dragging = nil
+        return true
     }
 }
 
