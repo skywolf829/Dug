@@ -1,0 +1,29 @@
+# Generate Dug.xcodeproj with: brew install xcodegen && xcodegen   (run in this folder)
+name: Dug
+options:
+  bundleIdPrefix: com.example
+  deploymentTarget:
+    iOS: "17.0"
+targets:
+  Dug:
+    type: application
+    platform: iOS
+    sources: [Dug]
+    info:
+      path: Dug/Info.plist
+      properties:
+        CFBundleDisplayName: Dug
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        NSBluetoothAlwaysUsageDescription: Dug's collar talks to your phone over Bluetooth.
+        # Keep the BLE link alive while the phone is locked in a pocket.
+        UIBackgroundModes: [bluetooth-central]
+    settings:
+      base:
+        # Change this to something unique to you (e.g. com.yourname.dug) before running on a phone.
+        PRODUCT_BUNDLE_IDENTIFIER: com.example.dug
+        MARKETING_VERSION: "1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        TARGETED_DEVICE_FAMILY: "1"
+        SWIFT_VERSION: "5.0"
+        CODE_SIGN_STYLE: Automatic
