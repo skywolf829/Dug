@@ -24,10 +24,10 @@ final class SimulatedTransport: CollarTransport {
         var lastAck = 0
     }
 
-    private let maxVolume: UInt8 = 170
+    private let maxVolume: UInt8 = 255
     private let capacity = 1_900_000
     private var clips: [UInt8: Clip] = [:]
-    private var volume: UInt8 = 120
+    private var volume: UInt8 = 255
     private var upload: Upload?
     private var playingID: UInt8?
     private var running = false
