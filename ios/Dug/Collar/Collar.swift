@@ -61,6 +61,10 @@ final class Collar: ObservableObject {
     private let uploads = SerialQueue()
     private var upload: UploadState?
     private var listing: Set<UInt8>?
+    private var volumeSendPending = false
+    /// The collar echoes its volume after every change. While the user is dragging, those echoes
+    /// are stale and would yank the slider backwards, so they're ignored until this time.
+    private var ignoreVolumeEchoesUntil = Date.distantPast
 
     private struct UploadState {
         let audio: Data
@@ -114,7 +118,16 @@ final class Collar: ObservableObject {
         let clamped = min(value, maxVolume)
         guard clamped != volume else { return }
         volume = clamped
-        send(.setVolume(clamped))
+        ignoreVolumeEchoesUntil = Date().addingTimeInterval(1)
+        // A slider drag fires dozens of changes; send at most one every 60 ms, always ending
+        // with the latest value.
+        guard !volumeSendPending else { return }
+        volumeSendPending = true
+        Task {
+            try? await Task.sleep(for: .milliseconds(60))
+            volumeSendPending = false
+            send(.setVolume(volume))
+        }
     }
 
     /// Uploads mu-law audio into slot `id`. Uploads are queued and run one at a time.
@@ -177,7 +190,7 @@ final class Collar: ObservableObject {
         log.debug("collar → \(String(describing: event), privacy: .public)")
         switch event {
         case .state(let volume, let maxVolume, let playing, let freeKB):
-            self.volume = volume
+            if Date() > ignoreVolumeEchoesUntil { self.volume = volume }
             self.maxVolume = maxVolume
             self.playingID = playing
             self.freeKB = freeKB
