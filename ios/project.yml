@@ -1,7 +1,7 @@
 # Generate Dug.xcodeproj with: brew install xcodegen && xcodegen   (run in this folder)
 name: Dug
 options:
-  bundleIdPrefix: com.example
+  bundleIdPrefix: com.skywolf829
   deploymentTarget:
     iOS: "17.0"
 targets:
@@ -20,10 +20,11 @@ targets:
         UIBackgroundModes: [bluetooth-central]
     settings:
       base:
-        # Change this to something unique to you (e.g. com.yourname.dug) before running on a phone.
-        PRODUCT_BUNDLE_IDENTIFIER: com.example.dug
+        # Bundle IDs are globally unique on Apple's side; change this if you fork the project.
+        PRODUCT_BUNDLE_IDENTIFIER: com.skywolf829.dug
         MARKETING_VERSION: "1.0"
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.0"
         CODE_SIGN_STYLE: Automatic
+        DEVELOPMENT_TEAM: 28JU682E7D  # Personal Team; swap in your own if you fork

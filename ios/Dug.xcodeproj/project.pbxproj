@@ -166,6 +166,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					FCB060BF30E127DBC007C8D8 = {
+						DevelopmentTeam = 28JU682E7D;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -345,13 +346,14 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 28JU682E7D;
 				INFOPLIST_FILE = Dug/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.dug;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skywolf829.dug;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
@@ -365,13 +367,14 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 28JU682E7D;
 				INFOPLIST_FILE = Dug/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.example.dug;
+				PRODUCT_BUNDLE_IDENTIFIER = com.skywolf829.dug;
 				SDKROOT = iphoneos;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 1;
