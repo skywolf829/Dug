@@ -28,5 +28,5 @@ Pins are set at the top of `firmware/DugCollar/DugCollar.ino`.
 - **Button:** the onboard **SW** button plays clip 3 ("Squirrel!"), which is handy for testing
   without a phone.
 - **LED:** the red LED is on while audio plays. A fast blink at boot means the flash failed to mount.
-- **Puppy:** keep the box light and padded, point the speaker away from the dog's ears, and keep
-  `MAX_VOLUME` in the firmware conservative.
+- **Puppy:** keep the box light and padded, point the speaker away from the dog's ears, and watch
+  that `MAX_VOLUME` is now wide open (255) — turn it back down if it is too much on the real collar.

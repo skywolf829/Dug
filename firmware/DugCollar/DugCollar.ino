@@ -19,10 +19,10 @@ constexpr uint8_t PIN_I2S_DIN  = 9;
 constexpr int     PIN_AMP_SD   = 12;           // MAX98357A SD (shutdown) pin
 constexpr uint8_t PIN_BUTTON   = PIN_BUTTON1;  // the ItsyBitsy's onboard "SW" button
 
-// A speaker on a puppy's neck is right next to very good ears. Keep this conservative and
-// raise it only after listening on the actual collar. 0-255.
-constexpr uint8_t MAX_VOLUME     = 170;
-constexpr uint8_t DEFAULT_VOLUME = 120;
+// A speaker on a puppy's neck is right next to very good ears. Wide open at 255 now; drop
+// MAX_VOLUME back down if that turns out to be too much on the actual collar. 0-255.
+constexpr uint8_t MAX_VOLUME     = 255;
+constexpr uint8_t DEFAULT_VOLUME = 255;
 
 constexpr uint8_t BUTTON_CLIP = 3;  // "Squirrel!" in the app's preset list
 
