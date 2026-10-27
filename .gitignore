@@ -3,3 +3,10 @@ xcuserdata/
 DerivedData/
 build/
 *.xcuserstate
+
+# Voice tools: recordings and generated audio stay local (your voice; not for a public repo)
+tools/voice/data/
+tools/voice/outputs/
+tools/voice/.venv/
+tools/voice/teacher.json
+__pycache__/
