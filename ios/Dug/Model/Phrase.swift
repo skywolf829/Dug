@@ -13,10 +13,11 @@ struct Phrase: Identifiable, Equatable {
     static let all = [
         Phrase(id: 1, title: "Met you", emoji: "👋", file: "dug-met-you"),
         Phrase(id: 2, title: "I love you", emoji: "❤️", file: "my-name-is-dug-i-have-just-met-you-and-i-love-you"),
-        Phrase(id: 3, title: "Squirrel!", emoji: "🐿️", file: "and-he-made-me-this-collar-so-that-i-may-talk-squirrel"),
+        Phrase(id: 3, title: "Squirrel!", emoji: "🐿️", file: "squirrel"),
         Phrase(id: 4, title: "A ball!", emoji: "🎾", file: "a-ball-oh-boy-oh-boy-a-ball"),
         Phrase(id: 5, title: "Seen a bird?", emoji: "🐦", file: "have-you-seen-a-bird"),
         Phrase(id: 6, title: "Cone of shame", emoji: "🔺", file: "i-do-not-like-the-cone-of-shame"),
+        Phrase(id: 7, title: "My collar", emoji: "🎙️", file: "he-made-me-this-collar"),
     ]
 
     var url: URL? { Bundle.main.url(forResource: file, withExtension: "mp3", subdirectory: "Clips") }

@@ -22,8 +22,8 @@ roughly 1¾ minutes total. Max 30 s per clip.
 | id | use |
 |---|---|
 | 0 | never used (means "nothing" in `STATE.playing`) |
-| 1–6 | the app's soundboard clips (fixed ids so both phones agree) |
-| 7–255 | unused; the app deletes anything it finds here |
+| 1–7 | the app's soundboard clips (fixed ids so both phones agree) |
+| 8–255 | unused; the app deletes anything it finds here |
 
 Each clip stores a 32-bit `tag` — a fingerprint of the source file and processing version — so the
 app can tell whether the collar's copy is current.
