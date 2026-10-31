@@ -12,7 +12,7 @@ struct Phrase: Identifiable, Equatable {
     /// physical-button clip (firmware BUTTON_CLIP).
     static let all = [
         Phrase(id: 1, title: "My name is Dug", emoji: "🐕", file: "my-name-is-dug"),
-        Phrase(id: 2, title: "I love you", emoji: "❤️", file: "i-have-just-met-you-and-i-love-you"),
+        Phrase(id: 2, title: "I love you", emoji: "❤️", file: "dug-met-you"),
         Phrase(id: 3, title: "Squirrel!", emoji: "🐿️", file: "squirrel"),
         Phrase(id: 4, title: "A ball!", emoji: "🎾", file: "a-ball-oh-boy-oh-boy-a-ball"),
         Phrase(id: 5, title: "Seen a bird?", emoji: "🐦", file: "have-you-seen-a-bird"),
