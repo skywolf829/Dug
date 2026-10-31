@@ -4,8 +4,6 @@ struct ContentView: View {
     @EnvironmentObject private var model: AppModel
     @EnvironmentObject private var collar: Collar
     @State private var showSettings = false
-    @State private var editing: Phrase?
-    @State private var addingPhrase = false
     @State private var dragging: UInt8?
 
     private let columns = [GridItem(.adaptive(minimum: 150), spacing: 12)]
@@ -16,11 +14,9 @@ struct ContentView: View {
                 VStack(spacing: 16) {
                     CollarCard()
 
-                    SayItCard()
-
                     LazyVGrid(columns: columns, spacing: 12) {
                         ForEach(model.phrases) { phrase in
-                            PhraseButton(phrase: phrase, onEdit: { editing = phrase })
+                            PhraseButton(phrase: phrase)
                                 .opacity(dragging == phrase.id ? 0.4 : 1)
                                 .onDrag {
                                     dragging = phrase.id
@@ -36,8 +32,9 @@ struct ContentView: View {
                         return true
                     }
 
-                    if !model.otherCollarClips.isEmpty {
-                        otherClips
+                    if model.phrases.isEmpty {
+                        ContentUnavailableView("No clips in this build", systemImage: "waveform.slash",
+                                               description: Text("Put the mp3s in ios/LocalClips and rebuild."))
                     }
                 }
                 .padding()
@@ -48,42 +45,14 @@ struct ContentView: View {
                 ToolbarItem(placement: .topBarLeading) {
                     Button { showSettings = true } label: { Image(systemName: "gearshape") }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { addingPhrase = true } label: { Image(systemName: "plus") }
-                }
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView().environmentObject(model).environmentObject(collar)
-            }
-            .sheet(isPresented: $addingPhrase) {
-                PhraseEditor(phrase: nil).environmentObject(model)
-            }
-            .sheet(item: $editing) { phrase in
-                PhraseEditor(phrase: phrase).environmentObject(model)
             }
             .alert("Ruh-roh", isPresented: errorBinding) {
                 Button("OK") {}
             } message: {
                 Text(model.errorMessage ?? collar.lastError ?? "")
-            }
-        }
-    }
-
-    private var otherClips: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Also on the collar").font(.headline)
-            ForEach(model.otherCollarClips) { clip in
-                Button { collar.play(clip.id) } label: {
-                    HStack {
-                        Image(systemName: collar.playingID == clip.id ? "speaker.wave.2.fill" : "play.circle")
-                        Text(clip.name.isEmpty ? "Clip \(clip.id)" : clip.name)
-                        Spacer()
-                        Text(String(format: "%.1fs", clip.duration)).foregroundStyle(.secondary)
-                    }
-                    .padding(12)
-                    .background(Theme.card, in: RoundedRectangle(cornerRadius: 12))
-                }
-                .buttonStyle(.plain)
             }
         }
     }

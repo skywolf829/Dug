@@ -10,3 +10,6 @@ tools/voice/outputs/
 tools/voice/.venv/
 tools/voice/teacher.json
 __pycache__/
+
+# Movie clips for the personal build: bundled at build time, never committed
+ios/LocalClips/

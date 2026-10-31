@@ -1,25 +1,28 @@
 # Dug 🐿️
 
 A talking collar for a Halloween *Up* costume. The dog wears the collar, and the humans trigger
-lines from their phones, or type anything and the iPhone synthesizes it on device.
+clips from their phones.
 
 ```
 ┌──────────────┐   BLE    ┌───────────────────────────┐
 │ iPhone app   │ ───────▶ │ ItsyBitsy nRF52840        │
 │  soundboard  │          │  2 MB flash (clips)       │──I2S──▶ MAX98357A ──▶ 🔊
-│  TTS → μ-law │ ◀─────── │  BLE: play / upload       │
+│  mp3 → μ-law │ ◀─────── │  BLE: play / upload       │
 └──────────────┘  status  └───────────────────────────┘
    (×2 phones)
 ```
 
-- **`ios/`**: SwiftUI app. Has a soundboard of Dug presets, a "say anything" box, and voice settings
-  (pitch, speed, any installed voice, Personal Voice). Speech is rendered on device with
-  `AVSpeechSynthesizer`, resampled to 16 kHz, compressed to μ-law, and uploaded to the collar.
-  A built-in **simulated collar** runs the same protocol and plays through the phone, so the whole
-  app works before the hardware does.
+- **`ios/`**: SwiftUI soundboard app. Clips are decoded, resampled to 16 kHz, run through a loudness
+  chain, compressed to μ-law, and uploaded to the collar. A built-in **simulated collar** runs the
+  same protocol and plays through the phone, so the whole app works before the hardware does.
 - **`firmware/DugCollar/`**: Arduino sketch. Stores clips on QSPI flash (LittleFS) and plays them
   through I2S DMA. Two phones can connect at once.
 - **`docs/`**: [protocol](docs/PROTOCOL.md) and [wiring](docs/WIRING.md).
+
+## Clips
+
+The audio isn't in this repo. Put your mp3s in `ios/LocalClips/` (git-ignored) before building; the
+build copies them into the app. `ios/Dug/Model/Phrase.swift` lists the filenames and button labels.
 
 ## iOS app
 
@@ -36,7 +39,7 @@ cd ios && xcodegen && open Dug.xcodeproj
    week of Halloween.
 3. The app starts in **Simulator** mode. Switch to **Real collar** in Settings once the hardware is built.
 
-Long-press any button to preview it on the phone, or to edit/delete your own phrases.
+Long-press a button to preview it on the phone, or hold and drag to reorder.
 
 ## Firmware
 
@@ -53,12 +56,11 @@ arduino-cli upload  --fqbn adafruit:nrf52:itsybitsy52840 -p /dev/cu.usbmodem* fi
 ```
 
 The first boot formats the 2 MB flash (this erases CircuitPython files, if there were any). Clips arrive from
-the app: when it connects, it "teaches" the collar every preset, which takes a few seconds per phrase.
+the app: when it connects, it "teaches" the collar every clip.
 
 ## Status
 
 - [x] Firmware compiles (Adafruit nRF52 core 1.7.0). **Not yet tested on hardware.**
 - [x] iOS app type-checks against the iOS 17 SDK. Simulator mode exercises the full protocol.
 - [ ] First hardware bring-up: check I2S audio, volume, and BLE upload speed
-- [ ] Personal Voice: record it in iOS Settings, then select it in the app
 - [ ] Ideas: App Intent so the iPhone Action button yells "Squirrel!", and a Lock Screen widget

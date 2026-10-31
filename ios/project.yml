@@ -9,6 +9,14 @@ targets:
     type: application
     platform: iOS
     sources: [Dug]
+    # Clips stay out of git, so they're copied in here rather than listed as project files.
+    postCompileScripts:
+      - name: Bundle LocalClips
+        basedOnDependencyAnalysis: false
+        script: |
+          dst="$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Clips"
+          rm -rf "$dst" && mkdir -p "$dst"
+          cp "$SRCROOT"/LocalClips/*.mp3 "$dst"/ 2>/dev/null || echo "warning: no clips in ios/LocalClips"
     info:
       path: Dug/Info.plist
       properties:
@@ -27,4 +35,5 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         SWIFT_VERSION: "5.0"
         CODE_SIGN_STYLE: Automatic
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
         DEVELOPMENT_TEAM: 28JU682E7D  # Personal Team; swap in your own if you fork

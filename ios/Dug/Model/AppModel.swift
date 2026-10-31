@@ -5,39 +5,35 @@ enum PhraseStatus {
     case ready, needsUpload, unknown
 }
 
-/// Ties the soundboard, the voice, and the collar together.
+/// Ties the soundboard and the collar together.
 @MainActor
 final class AppModel: ObservableObject {
-    @Published var customPhrases: [Phrase] { didSet { save(customPhrases, key: Keys.phrases) } }
     /// Soundboard order, by phrase id. Phrases missing from it go at the end.
     @Published private(set) var order: [UInt8] { didSet { save(order, key: Keys.order) } }
-    @Published var voice: VoiceSettings { didSet { save(voice, key: Keys.voice) } }
     @Published var mode: CollarMode {
         didSet {
             save(mode, key: Keys.mode)
             collar.setMode(mode)
         }
     }
-    /// e.g. "Teaching Dug 3 of 12…" while presets upload.
+    /// e.g. "Teaching Dug 3 of 6…" while clips upload.
     @Published private(set) var activity: String?
     @Published var errorMessage: String?
 
     let collar: Collar
-    private let renderer = SpeechRenderer()
+    /// Clips actually bundled in this build, with their tags (hashed once, off the file).
+    private let available: [(phrase: Phrase, tag: UInt32)]
     private let previewPlayer = ClipPlayer()
     private var isSyncing = false
 
     private enum Keys {
-        static let phrases = "customPhrases"
         static let order = "phraseOrder"
-        static let voice = "voiceSettings"
         static let mode = "collarMode"
     }
 
     init() {
-        customPhrases = Self.load([Phrase].self, key: Keys.phrases) ?? []
+        available = Phrase.all.filter { $0.url != nil }.map { ($0, $0.tag) }
         order = Self.load([UInt8].self, key: Keys.order) ?? []
-        voice = Self.load(VoiceSettings.self, key: Keys.voice) ?? VoiceSettings()
         let mode = Self.load(CollarMode.self, key: Keys.mode) ?? .simulator
         self.mode = mode
         collar = Collar(mode: mode)
@@ -52,7 +48,7 @@ final class AppModel: ObservableObject {
 
     var phrases: [Phrase] {
         let rank = Dictionary(order.enumerated().map { ($1, $0) }, uniquingKeysWith: min)
-        return (Phrase.presets + customPhrases).enumerated()
+        return available.map(\.phrase).enumerated()
             .sorted { (rank[$0.element.id] ?? .max, $0.offset) < (rank[$1.element.id] ?? .max, $1.offset) }
             .map(\.element)
     }
@@ -65,17 +61,9 @@ final class AppModel: ObservableObject {
         order = ids
     }
 
-    /// Clips on the collar that this phone has no button for (e.g. added from the other phone).
-    var otherCollarClips: [CollarClip] {
-        let known = Set(phrases.map(\.id))
-        return collar.clips.values
-            .filter { !known.contains($0.id) && $0.id != DugProtocol.scratchClipID }
-            .sorted { $0.id < $1.id }
-    }
-
     func status(of phrase: Phrase) -> PhraseStatus {
         guard collar.isConnected else { return .unknown }
-        return collar.clips[phrase.id]?.tag == voice.fingerprint(for: phrase.text) ? .ready : .needsUpload
+        return collar.clips[phrase.id]?.tag == tag(of: phrase) ? .ready : .needsUpload
     }
 
     var pendingCount: Int { phrases.filter { status(of: $0) == .needsUpload }.count }
@@ -93,20 +81,10 @@ final class AppModel: ObservableObject {
         }
     }
 
-    /// Synthesizes `text` and has Dug say it right away.
-    func say(_ text: String) async {
-        await perform("Dug is thinking…") {
-            let audio = try await self.renderer.render(text, voice: self.voice)
-            try await self.collar.upload(id: DugProtocol.scratchClipID, name: String(text.prefix(40)),
-                                         tag: 0, audio: audio, playWhenDone: true)
-        }
-    }
-
     /// Plays the collar-quality audio on the phone, no collar needed.
-    func preview(_ text: String) async {
+    func preview(_ phrase: Phrase) async {
         await perform(nil) {
-            let audio = try await self.renderer.render(text, voice: self.voice)
-            self.previewPlayer.play(audio)
+            self.previewPlayer.play(try await self.render(phrase))
         }
     }
 
@@ -118,6 +96,12 @@ final class AppModel: ObservableObject {
         }
         isSyncing = true
         defer { isSyncing = false }
+
+        // Clear out anything else, like speech clips from earlier versions of the app.
+        if !available.isEmpty {
+            let known = Set(phrases.map(\.id))
+            for id in collar.clips.keys where !known.contains(id) { collar.delete(id) }
+        }
 
         let todo = phrases.filter { force || status(of: $0) == .needsUpload }
         log.info("sync: \(todo.count) phrase(s) to upload")
@@ -134,39 +118,20 @@ final class AppModel: ObservableObject {
         activity = nil
     }
 
-    // MARK: - Library
-
-    func addPhrase(title: String, emoji: String, text: String) -> Phrase? {
-        let used = Set(phrases.map(\.id)).union(collar.clips.keys)
-        guard let id = (DugProtocol.firstCustomClipID ..< DugProtocol.scratchClipID).first(where: { !used.contains($0) })
-        else {
-            errorMessage = "Dug already knows too many phrases. Delete one first."
-            return nil
-        }
-        let phrase = Phrase(id: id, title: title, emoji: emoji.isEmpty ? "💬" : emoji, text: text)
-        customPhrases.append(phrase)
-        Task { await syncAll() }
-        return phrase
-    }
-
-    func update(_ phrase: Phrase) {
-        guard let i = customPhrases.firstIndex(where: { $0.id == phrase.id }) else { return }
-        customPhrases[i] = phrase
-        Task { await syncAll() }
-    }
-
-    func delete(_ phrase: Phrase) {
-        customPhrases.removeAll { $0.id == phrase.id }
-        order.removeAll { $0 == phrase.id }
-        if collar.isConnected { collar.delete(phrase.id) }
-    }
-
     // MARK: - Private
 
+    private func tag(of phrase: Phrase) -> UInt32? {
+        available.first { $0.phrase.id == phrase.id }?.tag
+    }
+
+    private func render(_ phrase: Phrase) async throws -> Data {
+        guard let url = phrase.url else { throw RenderError.noAudio }
+        return try await Task.detached { try ClipRenderer.render(url) }.value
+    }
+
     private func upload(_ phrase: Phrase, playWhenDone: Bool) async throws {
-        let audio = try await renderer.render(phrase.text, voice: voice)
-        try await collar.upload(id: phrase.id, name: phrase.title, tag: voice.fingerprint(for: phrase.text),
-                                audio: audio, playWhenDone: playWhenDone)
+        try await collar.upload(id: phrase.id, name: phrase.title, tag: tag(of: phrase) ?? 0,
+                                audio: render(phrase), playWhenDone: playWhenDone)
     }
 
     private func perform(_ message: String?, _ work: @escaping () async throws -> Void) async {

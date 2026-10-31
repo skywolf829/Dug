@@ -8,10 +8,6 @@ enum DugProtocol {
     static let dataUUID = CBUUID(string: "6E1D0003-D0C0-4B1A-9C55-55505F444F47")
     static let statusUUID = CBUUID(string: "6E1D0004-D0C0-4B1A-9C55-55505F444F47")
 
-    /// "Say this now" clips overwrite this slot.
-    static let scratchClipID: UInt8 = 255
-    /// Preset phrases use 1..<32; user phrases are allocated from here up.
-    static let firstCustomClipID: UInt8 = 32
     static let maxNameBytes = 40
     static let maxClipBytes = 30 * 16_000
     /// Max unacknowledged upload bytes in flight. The collar's receive ring is 8 KB.

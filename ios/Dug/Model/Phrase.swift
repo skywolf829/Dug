@@ -1,33 +1,35 @@
 import Foundation
 
 /// A button on the soundboard. The `id` is also the clip slot on the collar.
-struct Phrase: Identifiable, Codable, Equatable {
-    var id: UInt8
-    var title: String
-    var emoji: String
-    var text: String
-    var isPreset = false
+struct Phrase: Identifiable, Equatable {
+    let id: UInt8
+    let title: String
+    let emoji: String
+    /// Basename of an mp3 in ios/LocalClips, which is bundled into the app at build time.
+    let file: String
 
-    static let squirrelID: UInt8 = 3  // also the collar's physical-button clip (firmware BUTTON_CLIP)
+    /// Ids are fixed so both phones and the collar agree on them. 3 is also the collar's
+    /// physical-button clip (firmware BUTTON_CLIP).
+    static let all = [
+        Phrase(id: 1, title: "Met you", emoji: "👋", file: "dug-met-you"),
+        Phrase(id: 2, title: "I love you", emoji: "❤️", file: "my-name-is-dug-i-have-just-met-you-and-i-love-you"),
+        Phrase(id: 3, title: "Squirrel!", emoji: "🐿️", file: "and-he-made-me-this-collar-so-that-i-may-talk-squirrel"),
+        Phrase(id: 4, title: "A ball!", emoji: "🎾", file: "a-ball-oh-boy-oh-boy-a-ball"),
+        Phrase(id: 5, title: "Seen a bird?", emoji: "🐦", file: "have-you-seen-a-bird"),
+        Phrase(id: 6, title: "Cone of shame", emoji: "🔺", file: "i-do-not-like-the-cone-of-shame"),
+    ]
 
-    /// Preset ids are fixed (1..<32) so both phones and the collar agree on them.
-    static let presets: [Phrase] = [
-        Phrase(id: 1, title: "Hi there", emoji: "👋", text: "Hi there!"),
-        Phrase(id: 2, title: "I love you", emoji: "❤️",
-               text: "My name is Dug. I have just met you, and I love you."),
-        Phrase(id: squirrelID, title: "Squirrel!", emoji: "🐿️", text: "Squirrel!"),
-        Phrase(id: 4, title: "My master", emoji: "🧓",
-               text: "My master made me this collar. He is a good and smart master, and he made me this collar so that I may speak."),
-        Phrase(id: 5, title: "Under porch", emoji: "🏠",
-               text: "I was hiding under your porch because I love you."),
-        Phrase(id: 6, title: "Can I keep you?", emoji: "🥺", text: "Can I keep you?"),
-        Phrase(id: 7, title: "Point!", emoji: "👉", text: "Point!"),
-        Phrase(id: 8, title: "Cone of shame", emoji: "🔺", text: "I do not like the cone of shame."),
-        Phrase(id: 9, title: "Trick or treat", emoji: "🎃", text: "Trick or treat! I would like a treat, please."),
-        Phrase(id: 10, title: "Happy Halloween", emoji: "👻", text: "Happy Halloween!"),
-        Phrase(id: 11, title: "Good dog", emoji: "🦴", text: "I am a good dog. I am a very good dog."),
-        Phrase(id: 12, title: "Oh boy", emoji: "🤩", text: "Oh boy! Oh boy! Oh boy!"),
-        Phrase(id: 13, title: "Ranger!", emoji: "🎖️", text: "That is my ranger. She is the best ranger."),
-        Phrase(id: 14, title: "Balloons", emoji: "🎈", text: "Your house is floating. I did not know houses could do that."),
-    ].map { var p = $0; p.isPreset = true; return p }
+    var url: URL? { Bundle.main.url(forResource: file, withExtension: "mp3", subdirectory: "Clips") }
+
+    /// Identifies this clip's contents and processing, so the collar's copy can be checked
+    /// (FNV-1a: stable across launches and devices, unlike `hashValue`).
+    var tag: UInt32 {
+        guard let url, let bytes = try? Data(contentsOf: url) else { return 0 }
+        var hash: UInt32 = 2_166_136_261 &+ UInt32(ClipRenderer.version)
+        for byte in bytes {
+            hash ^= UInt32(byte)
+            hash &*= 16_777_619
+        }
+        return hash
+    }
 }

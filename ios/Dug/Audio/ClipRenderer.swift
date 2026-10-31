@@ -1,73 +1,35 @@
 import AVFoundation
 
 enum RenderError: LocalizedError {
-    case emptyText
     case noAudio
     case conversionFailed
-    case timedOut
 
     var errorDescription: String? {
         switch self {
-        case .emptyText: "There's nothing to say."
-        case .noAudio: "The voice didn't produce any audio. Try another voice in Settings."
-        case .conversionFailed: "Couldn't convert the speech audio."
-        case .timedOut: "The voice took too long to respond. Try again in a moment."
+        case .noAudio: "That clip has no audio in it."
+        case .conversionFailed: "Couldn't convert that clip."
         }
     }
 }
 
-/// Turns text into collar-ready audio entirely on device: AVSpeechSynthesizer renders to
-/// buffers (instead of the speaker), which are resampled to 16 kHz mono, trimmed, run through
+/// Turns an audio file into collar-ready audio: resampled to 16 kHz mono, trimmed, run through
 /// the loudness chain below, and mu-law encoded.
-@MainActor
-final class SpeechRenderer {
-    private let synthesizer = AVSpeechSynthesizer()
-    private let queue = SerialQueue()
+enum ClipRenderer {
+    /// Bump when the processing changes, so collars re-fetch clips they already have.
+    static let version = 1
 
-    func render(_ text: String, voice: VoiceSettings) async throws -> Data {
-        let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { throw RenderError.emptyText }
-        // AVSpeechSynthesizer only renders one utterance at a time.
-        return try await queue.run {
-            let samples = try await self.synthesize(text, voice: voice)
-            let cleaned = Self.trimAndNormalize(samples)
-            guard !cleaned.isEmpty else { throw RenderError.noAudio }
-            return MuLaw.encode(cleaned)
-        }
-    }
-
-    private func synthesize(_ text: String, voice: VoiceSettings) async throws -> [Int16] {
-        let utterance = AVSpeechUtterance(string: text)
-        utterance.voice = voice.voice
-        utterance.pitchMultiplier = voice.pitch
-        utterance.rate = voice.rate
+    static func render(_ url: URL) throws -> Data {
+        let file = try AVAudioFile(forReading: url)
+        guard let buffer = AVAudioPCMBuffer(pcmFormat: file.processingFormat,
+                                            frameCapacity: AVAudioFrameCount(file.length))
+        else { throw RenderError.conversionFailed }
+        try file.read(into: buffer)
 
         let collector = PCMCollector()
-        return try await withCheckedThrowingContinuation { continuation in
-            let once = Once()
-            synthesizer.write(utterance) { buffer in
-                guard let pcm = buffer as? AVAudioPCMBuffer else { return }
-                // An empty buffer marks the end of the utterance.
-                if pcm.frameLength == 0 {
-                    once.run { continuation.resume(with: Result { try collector.finish() }) }
-                    return
-                }
-                do {
-                    try collector.append(pcm)
-                } catch {
-                    once.run { continuation.resume(throwing: error) }
-                }
-            }
-            // The speech service occasionally stalls (seen on a fresh simulator); don't hang forever.
-            Task { [synthesizer] in
-                try? await Task.sleep(for: .seconds(15))
-                once.run {
-                    log.error("render timed out")
-                    synthesizer.stopSpeaking(at: .immediate)
-                    continuation.resume(throwing: RenderError.timedOut)
-                }
-            }
-        }
+        try collector.append(buffer)
+        let cleaned = trimAndNormalize(try collector.finish())
+        guard !cleaned.isEmpty else { throw RenderError.noAudio }
+        return MuLaw.encode(cleaned)
     }
 
     /// Tuning for the loudness chain in `trimAndNormalize`. The collar's driver is small and
@@ -86,7 +48,7 @@ final class SpeechRenderer {
         /// Compression ratio above the threshold. High enough to be close to limiting; pushing
         /// further measured well under a dB of gain and starts to sound squashed.
         static let ratio: Float = 20
-        /// Cap on total gain, so a near-silent render isn't amplified into its own artifacts.
+        /// Cap on total gain, so a near-silent clip isn't amplified into its own artifacts.
         /// It has to apply to the whole chain, not one stage, or the makeup below sidesteps it.
         static let maxBoost: Float = 8
         /// Look-ahead in samples (2 ms), so gain is already down when a peak lands.
@@ -98,7 +60,7 @@ final class SpeechRenderer {
 
     /// Trims leading/trailing silence (so taps feel instant), then runs the loudness chain so the
     /// collar carries over outdoor noise. See `Loudness` for the tuning.
-    nonisolated static func trimAndNormalize(_ samples: [Int16]) -> [Int16] {
+    static func trimAndNormalize(_ samples: [Int16]) -> [Int16] {
         let threshold: Int16 = 400
         let pad = Int(MuLaw.sampleRate * 0.03)
         guard let first = samples.firstIndex(where: { abs(Int32($0)) > threshold }),
@@ -125,17 +87,17 @@ final class SpeechRenderer {
         return audio.map { Int16(clamping: Int32($0.rounded())) }
     }
 
-    private nonisolated static func peak(_ x: [Float]) -> Float {
+    private static func peak(_ x: [Float]) -> Float {
         x.reduce(0) { max($0, abs($1)) }
     }
 
-    private nonisolated static func scale(_ x: inout [Float], by gain: Float) {
+    private static func scale(_ x: inout [Float], by gain: Float) {
         guard gain != 1 else { return }
         for i in x.indices { x[i] *= gain }
     }
 
     /// Second-order Butterworth high-pass (RBJ cookbook coefficients), direct form I.
-    private nonisolated static func highPassed(_ x: [Float]) -> [Float] {
+    private static func highPassed(_ x: [Float]) -> [Float] {
         let w0 = 2 * Float.pi * Loudness.highPassHz / Float(MuLaw.sampleRate)
         let cosW0 = cos(w0)
         let alpha = sin(w0) / (2 * 0.70710678)  // Q = 1/sqrt(2), maximally flat
@@ -160,7 +122,7 @@ final class SpeechRenderer {
     /// Downward compression above `Loudness.thresholdFraction` of the ceiling. The look-ahead
     /// means gain is already down when a transient lands, so there's none of the grit a plain
     /// clipper adds, and the quick release is what levels one syllable against the next.
-    private nonisolated static func compress(_ x: inout [Float]) {
+    private static func compress(_ x: inout [Float]) {
         let threshold = Loudness.ceiling * Loudness.thresholdFraction
         let release = 1 - exp(-1 / (Loudness.releaseSeconds * Float(MuLaw.sampleRate)))
         var gain: Float = 1
@@ -179,7 +141,7 @@ final class SpeechRenderer {
     }
 }
 
-/// Resamples whatever the synthesizer hands us (often 22.05 kHz Float32) to 16 kHz Int16 mono.
+/// Resamples a decoded file to 16 kHz Int16 mono.
 private final class PCMCollector {
     private let target = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: MuLaw.sampleRate,
                                        channels: 1, interleaved: true)!
@@ -189,6 +151,7 @@ private final class PCMCollector {
     func append(_ buffer: AVAudioPCMBuffer) throws {
         if converter?.inputFormat != buffer.format {
             converter = AVAudioConverter(from: buffer.format, to: target)
+            converter?.downmix = true
         }
         guard let converter else { throw RenderError.conversionFailed }
         try convert(converter, input: buffer)
@@ -225,19 +188,5 @@ private final class PCMCollector {
             // .haveData means the output filled up and there's more; anything else means done.
             guard status == .haveData else { return }
         }
-    }
-}
-
-/// Runs a closure at most once, from any thread.
-private final class Once {
-    private let lock = NSLock()
-    private var done = false
-
-    func run(_ body: () -> Void) {
-        lock.lock()
-        let first = !done
-        done = true
-        lock.unlock()
-        if first { body() }
     }
 }

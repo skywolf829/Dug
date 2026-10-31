@@ -22,12 +22,11 @@ roughly 1¾ minutes total. Max 30 s per clip.
 | id | use |
 |---|---|
 | 0 | never used (means "nothing" in `STATE.playing`) |
-| 1–31 | built-in presets (fixed ids so both phones agree) |
-| 32–254 | user phrases |
-| 255 | scratch: "say this now" |
+| 1–6 | the app's soundboard clips (fixed ids so both phones agree) |
+| 7–255 | unused; the app deletes anything it finds here |
 
-Each clip stores a 32-bit `tag` — a fingerprint of text + voice settings — so the app can tell
-whether the collar's copy is current.
+Each clip stores a 32-bit `tag` — a fingerprint of the source file and processing version — so the
+app can tell whether the collar's copy is current.
 
 ## Commands (Control)
 
